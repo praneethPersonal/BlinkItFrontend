@@ -5,30 +5,39 @@ import { EachProductDiv,ProductImageDiv,ProductImage,ProductName,ProductUnit,Bot
 import milkPacket from "../Components/TempComponents/8f2eb870-8e57-43f2-b770-e23a2d9a2163.jpg"
 import { SearchBodyDiv,ToShowResults ,SearchedFor} from "./StyledComponents/SearchBodyStyled";
 import { Link } from "react-router-dom";
+import axios from "axios";
+import { useDebounce } from "use-debounce";
+
+async function searchProductFn({queryKey}){
+  const [, keyword ] = queryKey;
+  const urlWithQueryParams = "http://localhost:5017/api/blinkit/Product/productSearch?keyword=" + keyword;
+  const response = await axios.get(urlWithQueryParams)
+  return response.data;
+}
 
 export function Search({isLoggedIn, setShowLoginDialog,setIsLoggedIn,showLoginDialog}) {
     const queryClient = useQueryClient();
     const [searchedValue, setSearchedValue] = useState("");
-    
+    const [debouncedSearch] = useDebounce(searchedValue, 500)
 
-    const fetchData = async () => {
-        const response = await fetch("http://localhost:5017/api/blinkit/Product/products");
-        const data = await response.json();  
-        return data;
-    };
-
-    const { isLoading:loadingForProds, isError:errorForProds, data:dataForProds } = useQuery({ queryKey: ["fetchingfrombackendForProdsInSearchBar"], queryFn:fetchData});
     
+    const {isLoading : searchLoading, isError: searchError, data: searchData} =  useQuery({
+      queryKey : ["searchProduct", debouncedSearch],
+      queryFn : searchProductFn,
+      enabled : debouncedSearch.length > 2,
+      retry : false
+    })
+
     const fetchDataForCart = () => {
         const storedCart = JSON.parse(localStorage.getItem('cartProducts')) || [];
         return storedCart;
     };
     
-          
-        const { isLoading: loadingForCart, data: dataForCart } = useQuery({
-            queryKey: ["fetchingfrombackendForCart"],
-            queryFn: fetchDataForCart,
-        });
+         
+      const { isLoading: loadingForCart, data: dataForCart } = useQuery({
+          queryKey: ["fetchingfrombackendForCart"],
+          queryFn: fetchDataForCart,
+      });
        const handleAddToCart = (product) => {
      
           const storedCart = JSON.parse(localStorage.getItem('cartProducts')) || [];
@@ -73,21 +82,18 @@ export function Search({isLoggedIn, setShowLoginDialog,setIsLoggedIn,showLoginDi
       };
   
 
-  const getProductQuantity = (productId) => {
-    const productInCart = dataForCart?.find(item => item.product_name === productId);
-    return productInCart ? productInCart.quantity : 0;
-};
-if(loadingForProds){
-    return(
-        <p>Wait!! Its Loading</p>
-    )
-}
+    const getProductQuantity = (productId) => {
+      const productInCart = dataForCart?.find(item => item.product_name === productId);
+      return productInCart ? productInCart.quantity : 0;
+    };
+    if(searchLoading){
+        return(
+            <p>Wait!! Its Loading</p>
+        )
+    }
 
     
-    const SearchProducts = dataForProds && dataForProds.map(iter => {
-            if ( searchedValue !== "" && iter.product_name.toLowerCase().includes(searchedValue.toLowerCase())){
-
-                return (
+    const SearchProducts = searchData && searchData.map(iter => (
                     <EachProductDiv key={iter._id}>
                     {getProductQuantity(iter.product_name) >= iter.stock ? (
                      <div style={{ position: 'relative', textAlign: 'center' }}>
@@ -217,16 +223,14 @@ if(loadingForProds){
                       </>
                     )}
                   </EachProductDiv>
-                )
-            }
-    }).filter(it=>it)
+                ))
     
    
   return (
     <>
       <SearchHeader setSearchedValue={setSearchedValue} isLoggedIn={isLoggedIn} setShowLoginDialog={setShowLoginDialog}  setIsLoggedIn={setIsLoggedIn}/>
         <ToShowResults>
-            {searchedValue !== "" ? <SearchedFor>Showing results for "{searchedValue}"</SearchedFor>:""}
+            {!searchError ? <SearchedFor>Showing results for "{searchedValue}"</SearchedFor>:"No results found"}
         </ToShowResults>
 
       <SearchBodyDiv>
