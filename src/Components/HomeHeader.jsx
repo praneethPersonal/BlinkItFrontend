@@ -158,7 +158,7 @@ function HomeHeader({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDialog
 
   const handleLoginClick = async () => {
     try {
-      const response = await fetch('https://localhost:7081/api/BlinkIt/login', {
+      const response = await fetch('http://localhost:5227/api/UserAuth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -220,7 +220,7 @@ function HomeHeader({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDialog
 
   const handleSignUp = async () => {
     try {
-      const response = await fetch('https://localhost:7081/api/BlinkIt/signUp', {
+      const response = await fetch('http://localhost:5227/api/UserAuth/signup?type=buyer', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -279,7 +279,7 @@ function HomeHeader({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDialog
 
   const handleSellerLogin = async () => {
     try {
-      const response = await fetch('https://localhost:7081/api/BlinkIt/login/seller', {
+      const response = await fetch('http://localhost:5227/api/UserAuth/seller/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -334,7 +334,7 @@ function HomeHeader({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDialog
 
   const handleSellerSignUp = async () => {
     try {
-      const response = await fetch('https://localhost:7081/api/BlinkIt/login/seller/signup', {
+      const response = await fetch('http://localhost:5227/api/UserAuth/signup?type=buyer', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
