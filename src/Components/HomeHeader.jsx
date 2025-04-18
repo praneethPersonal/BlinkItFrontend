@@ -279,7 +279,7 @@ function HomeHeader({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDialog
 
   const handleSellerLogin = async () => {
     try {
-      const response = await fetch('http://localhost:5227/api/UserAuth/login', {
+      const response = await fetch('http://localhost:5227/api/UserAuth/seller/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
