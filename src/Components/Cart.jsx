@@ -105,7 +105,7 @@ export function CartSideBar({isCartOpen,setIsCartOpen,isLoggedIn, setShowLoginDi
   // const data = fetchCartData();
 
   const fetchData2 = async () => {
-    const response = await fetch("http://localhost:5017/api/blinkit/Product/products");
+    const response = await fetch("http://localhost:5017/api/blinkit/GetProduct/products");
     const data = await response.json();
     return data;
   };
@@ -117,7 +117,6 @@ export function CartSideBar({isCartOpen,setIsCartOpen,isLoggedIn, setShowLoginDi
 
 
   const cartProducts = getCartProductDetails(data, dataForProds);
-  console.log(cartProducts,10000)
 
 
   const toggleCart = () => {
@@ -188,7 +187,6 @@ export function CartSideBar({isCartOpen,setIsCartOpen,isLoggedIn, setShowLoginDi
           }
       });
 
-      console.log(cartItems,"cartItems")
 
       if (validateResponse.ok) {
           // If the token is valid, proceed with adding products
@@ -211,7 +209,6 @@ export function CartSideBar({isCartOpen,setIsCartOpen,isLoggedIn, setShowLoginDi
           alert("Your session has expired. Please log in again.");
           localStorage.removeItem('jwtToken');
           setIsLoggedIn(false);
-          console.log(500)
       }
   } catch (error) {
       console.error("Error adding products:", error);

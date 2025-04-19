@@ -16,9 +16,8 @@ export function Product({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDi
    
     const queryClient = useQueryClient();
    
-    console.log(productName,"name")
     const fetchData1 = async () => {
-        const response = await fetch("http://localhost:5017/api/blinkit/Category/category");
+        const response = await fetch("http://localhost:5017/api/blinkit/GetProduct/category");
         const data = await response.json();  
         return data;
     };
@@ -110,8 +109,6 @@ export function Product({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDi
         const productInCart = dataForCart?.find(item => item.product_name === productId);
         return productInCart ? productInCart.quantity : 0;
     };
-
-    console.log(CurrentProduct,5000)
     
     const matchingCategory = dataForCats &&  dataForCats.find(cat => cat._id === CurrentProduct.category_id);
     CurrentProduct.category_name = matchingCategory.category_name;

@@ -74,7 +74,7 @@ export function ProfilePage({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLog
    
 
     const fetchData2 = async () => {
-        const response = await fetch("http://localhost:5017/api/blinkit/Product/products");
+        const response = await fetch("http://localhost:5017/api/blinkit/GetProduct/products");
         const data = await response.json();
         return data;
       };
@@ -204,9 +204,7 @@ export function ProfilePage({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLog
         {activeDiv === 2 && (
           <OrdersFUllDIv>
               {orders && orders.map((order, index) => {
-                {console.log(orders,"orders")}
                 const productDetails = findProductDetails(order);
-                console.log(productDetails)
                 return (
                   <OrderDiv key={index}>
 

@@ -20,7 +20,7 @@ export function FinalPage(){
     }
   }, []);
     const fetchData = async () => {
-        const response = await fetch("http://localhost:5017/api/blinkit/Product/products");
+        const response = await fetch("http://localhost:5017/api/blinkit/GetProduct/products");
         const data = await response.json();  
         return data;
     };
@@ -56,7 +56,6 @@ export function FinalPage(){
         }
         return null; // In case no matching product is found (for safety)
       }).filter(item => item ); // Filter out any null values
-      console.log(dataForProds)
 
       
       const handleUpdateStockOnLogout = async () => {
@@ -85,9 +84,8 @@ export function FinalPage(){
               if (!response.ok) {
                 throw new Error(`Failed to update stock for ${item.productId}`);
               }
-              console.log(`Stock updated for product ${item.productId}`);
             } catch (error) {
-              console.error("Error updating stock:", error);
+              // console.error("Error updating stock:", error);
             }
           }
         }

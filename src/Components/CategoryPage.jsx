@@ -45,7 +45,6 @@ export function CategoryPage({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLo
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [filter, setFilter] = useState("default");
 
-  console.log(categoryName);
 
   const fetchDataForCart = () => {
     const storedCart = JSON.parse(localStorage.getItem("cartProducts")) || [];
@@ -105,13 +104,13 @@ export function CategoryPage({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLo
     queryClient.invalidateQueries(["fetchingfrombackendForCart"]);
   };
   const fetchData1 = async () => {
-    const response = await fetch("http://localhost:5017/api/blinkit/Category/category");
+    const response = await fetch("http://localhost:5017/api/blinkit/GetProduct/category");
     const data = await response.json();
     return data;
   };
 
   const fetchData2 = async () => {
-    const response = await fetch("http://localhost:5017/api/blinkit/Product/products");
+    const response = await fetch("http://localhost:5017/api/blinkit/GetProduct/products");
     const data = await response.json();
     return data;
   };

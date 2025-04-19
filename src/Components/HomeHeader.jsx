@@ -25,6 +25,33 @@ import { CartSideBar } from "./Cart";
 import styled from "styled-components";
 import qrcode from "./Photos/qrcode.png"
 import location from "./ProfilePics/location.jpg"
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
+
+function SignUpCall({type, id, password}){
+  const body = {
+    "mobileNumber" : id,
+    "password" : password
+  }
+  const url = "http://localhost:5227/api/UserAuth/signup?type=" + type;
+  return axios.post(url,body)
+}
+
+function UserLoginCall({mobileNumber, password}){
+  const body = {
+    "mobileNumber" : mobileNumber,
+    "password" : password
+  }
+  return axios.post("http://localhost:5227/api/UserAuth/login", body)
+}
+
+function SellerLoginCall({mobileNumber, password}){
+  const body = {
+    mobileNumber : mobileNumber,
+    password : password
+  }
+  return axios.post("http://localhost:5227/api/UserAuth/seller/login", body)
+}
 
 function HomeHeader({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDialog}) {
   const placeholders = [
@@ -35,11 +62,7 @@ function HomeHeader({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDialog
     "Search 'Butter'"
   ];
   const [currentPlaceholder, setCurrentPlaceholder] = useState(placeholders[0]);
-  const [visible, setVisible] = useState(true);
 
-
-  // const [isLoggedIn, setIsLoggedIn] = useState(false); 
-  // const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAccountDialogOpen, setIsAccountDialogOpen] = useState(false);
 
@@ -53,86 +76,33 @@ function HomeHeader({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDialog
   const [showDialog, setShowDialog] = useState(false); 
   const [addresses, setAddresses] = useState([]); 
   const [currentAddress, setCurrentAddress] = useState("Select Delivery Address");
-  // Toggle the dialog box
+
+
+
+  const { mutate: doSignUp} = useMutation({mutationFn : SignUpCall});
+  const {mutate : doUserLogin} = useMutation({mutationFn : UserLoginCall});
+  const {mutate : doSellerLogin} = useMutation({mutationFn : SellerLoginCall})
+
+
+
+  useEffect(() => {
+    const token = localStorage.getItem("jwtToken")
+    if (token != null){
+      setIsLoggedIn(true)
+    }
+  }, [])
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setVisible(false);
       setTimeout(() => {
         setCurrentPlaceholder((prev) => {
           const currentIndex = placeholders.indexOf(prev);
           return placeholders[(currentIndex + 1) % placeholders.length];
         });
-        setVisible(true);
-      }, 500); // Wait for animation to complete
-    }, 2000); // Change placeholder every 3 seconds
-
+      }, 500); 
+    }, 2000);
     return () => clearInterval(interval);
   }, []);
-
-
-
-  const toggleLocationDialog = () => {
-    setShowDialog(!showDialog);
-  };
-
-  const closeDialog = () => {
-    setShowDialog(false);
-  };
-
-  const selectAddress = (address) => {
-    setCurrentAddress(address); // Store the selected address in state
-    localStorage.setItem('currentAddress', address); // Save the selected address in localStorage
-    setShowDialog(false); // Close the dialog
-  };
-  // Fetch addresses from localStorage when the component mounts
-  useEffect(() => {
-    const storedAddresses = localStorage.getItem('addresses'); // Get addresses from localStorage
-    if (storedAddresses) {
-      setAddresses(JSON.parse(storedAddresses)); // Parse and set the addresses
-    }
-    const storedCurrentAddress = localStorage.getItem('currentAddress');
-    if (storedCurrentAddress) {
-      setCurrentAddress(storedCurrentAddress);
-    }
-  }, []);
-
-
-  useEffect(() => {
-    const token = localStorage.getItem('jwtToken');
-    if (token) {
-      validateToken(token);
-    }
-  }, []);
-
-  const validateToken = async (token) => {
-    try {
-      const response = await fetch('https://localhost:7081/api/BlinkIt/validateToken', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`, 
-          'Content-Type': 'application/json',
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.isValid) {
-          setIsLoggedIn(true); 
-        } else {
-          setIsLoggedIn(false);
-          localStorage.removeItem('jwtToken'); 
-        }
-      } else {
-        setIsLoggedIn(false);
-        localStorage.removeItem('jwtToken'); 
-      }
-    } catch (error) {
-      console.error('Error validating token:', error);
-      setIsLoggedIn(false);
-      localStorage.removeItem('jwtToken'); 
-    }
-  };
 
 
   const handleSellerId = (e) =>{
@@ -148,150 +118,83 @@ function HomeHeader({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDialog
     localStorage.setItem('phoneNumber', newPhoneNumber); // Store phoneNumber in localStorage
   };
 
-  const handlePasswordChange = (e) => {
-    setPassword(e.target.value);
-  };
 
-  const handleSellerPw = (e) =>{
-    setSellerPw(e.target.value);
-  }
 
   const handleLoginClick = async () => {
-    try {
-      const response = await fetch('http://localhost:5227/api/UserAuth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          mobileNumber: phoneNumber, 
-          password: password,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const jwtToken = data.token;
-        console.log(data)
-      
-        // Store JWT token
-        localStorage.setItem('jwtToken', jwtToken);
-      
-        setStep(1); 
-        setPassword(''); 
-        setShowLoginDialog(false); // Close the login dialog
-        setIsLoggedIn(true); 
-      } else {
-        const data = await response.json(); // Get response body
-        console.log(data);
+    doUserLogin({mobileNumber : phoneNumber, password},
+      {
+        onSuccess: (response) => {
+          const data = response.data;
+          const jwtToken = data.token;
+       
+          localStorage.setItem('jwtToken', jwtToken);
         
-        if (response.status === 401 && data.message === 'inValid Mobile Number!') {
-          setError(true);
-          setErrorMessage("Its your First Time! Please Signup")
-          console.log(100)
-          setTimeout(() => {
-            setError(false);
-            setStep(3); // Keep the user on the step to retry login
-          }, 2000);
-          setStep(3); 
-        } else {
-          setError(true);
-          setErrorMessage('inValid Password!')
-          setTimeout(() => {
-            setError(false);
-            setStep(2); // Keep the user on the step to retry login
-          }, 2000);
+          setStep(1); 
+          setPassword(''); 
+          setShowLoginDialog(false); // Close the login dialog
+          setIsLoggedIn(true); 
+        },
+        onError : (err) => {
+          const data = err.response; 
+        
+          if (data.status === 401 && data.data === 'inValid Mobile Number!') {
+            setError(true);
+            setErrorMessage("Its your First Time! Please Signup")
+            setTimeout(() => {
+              setError(false);
+              setStep(3);
+            }, 2000);
+            setStep(3); 
+          } else {
+            setError(true);
+            setErrorMessage('inValid Password!')
+            setTimeout(() => {
+              setError(false);
+              setStep(2); // Keep the user on the step to retry login
+            }, 2000);
+          }
         }
       }
-    } catch (error) {
-      console.error('Error during login:', error);
-      setError(true); 
-      setErrorMessage("Error during Login")
-      setTimeout(() => {
-        setError(false); 
-        setStep(2); // Keep the user on the login step
-      }, 2000);
-
-    }
+    )
   };
-
-
 
 
   const handleSignUp = async () => {
-    try {
-      const response = await fetch('http://localhost:5227/api/UserAuth/signup?type=buyer', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          mobileNumber: phoneNumber, 
-          password: password,
-        }),
-      });
+      doSignUp({type: "buyer", id : phoneNumber,password: password},
+        {
+          onSuccess : (response) => {
+            const data = response.data;
+            const jwtToken = data.token;
 
-      if (response.ok) {
-        const data = await response.json();
-        const jwtToken = data.token;
-      
-       
-        localStorage.setItem('jwtToken', jwtToken);
-      
-        setStep(1); 
-        setPassword('');
-        setShowLoginDialog(false); 
-        setIsLoggedIn(true); 
-      } else {
-        const data = await response.json(); 
-        console.log(data);
-        if (response.status === 401 && data.message === 'Mobile number already exists. Cannot create new User.') {
-          setError(true);
-          setErrorMessage("Mobile number already exists. Cannot create new User.")
-          setStep(3);
-          setTimeout(() => {
-            setError(false);
-            setStep(3);
-          }, 2000);
+            localStorage.setItem('jwtToken', jwtToken);
           
-        } else {
-          setError(true);
-          setErrorMessage("invalid password")
-          setTimeout(() => {
-            setError(false);
-            setStep(3); 
-          }, 2000);
+            setStep(1); 
+            setPassword('');
+            setShowLoginDialog(false); 
+            setIsLoggedIn(true); 
+          },
+          onError : (err) => {
+            if (err.response?.status === 400 && err.response?.data === 'Mobile number already exists. Cannot create new User.') {
+              setError(true);
+              setErrorMessage("Mobile number already exists. Cannot create new User.")
+              setStep(3);
+              setTimeout(() => {
+                setError(false);
+                setStep(3);
+              }, 2000);
+              
+              }
+          }
         }
-      }
-    } catch (error) {
-      console.error('Error during login:', error);
-      setError(false); 
-      setErrorMessage("Error during Login")
-      setTimeout(() => {
-        setError(false); 
-        setStep(3); 
-      }, 2000);
-
-    }
+      );
   };
 
 
 
   const handleSellerLogin = async () => {
-    try {
-      const response = await fetch('http://localhost:5227/api/UserAuth/seller/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          mobileNumber: sellerId, 
-          password: sellerPw,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
+    doSellerLogin({mobileNumber : sellerId, password : sellerPw}, {
+      onSuccess : (response) => {
+        const data = response.data;
         const jwtToken = data.token; 
 
         localStorage.setItem('jwtTokenSeller', jwtToken);
@@ -302,10 +205,12 @@ function HomeHeader({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDialog
         
         window.location.replace("/seller");
 
-      } else {
-        const data = await response.json(); 
-        console.log(data);
-        if (response.status === 401 && data.message === 'New user please sign up!') {
+      },
+      onError : (err) => {
+        const data = err.response; 
+        console.log(data)
+        if (data.status === 404 && data.data === 'Please signup before login!') {
+          console.log(2)
           setError(true);
           setErrorMessage("Its your First Time! Please Signup")
           setStep(5); 
@@ -318,37 +223,16 @@ function HomeHeader({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDialog
           }, 2000);
         }
       }
-    }
-       catch (error) {
-      console.error('Error during login:', error);
-      setError(true);
-      setErrorMessage("ErrorDuring Login") 
-      setTimeout(() => {
-        setError(""); 
-        setStep(4); 
-      }, 2000);
-    }
+    })
   };
 
 
 
   const handleSellerSignUp = async () => {
-    try {
-      const response = await fetch('http://localhost:5227/api/UserAuth/signup?type=buyer', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          mobileNumber: sellerId, 
-          password: sellerPw,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
+    doSignUp({type: "seller", id : sellerId, password : sellerPw}, {
+      onSuccess : (response) => {
+        const data = response.data;
         const jwtToken = data.token;
-      
         
         localStorage.setItem('jwtToken', jwtToken);
       
@@ -357,47 +241,22 @@ function HomeHeader({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDialog
         setShowLoginDialog(false); 
         setIsLoggedIn(false); 
         window.location.replace("/seller");
-      } else {
-        const data = await response.json(); 
-        console.log(data);
-        if (response.status === 401 && data.message === 'Mobile number already exists. Cannot create new seller.') {
+      }, 
+      onError : (err) => {
+        const data = err.response.data; 
+        if (response.status === 400 && data === 'Mobile number already exists. Cannot create new seller.') {
           setError(true);
           setErrorMessage("Mobile number already exists. Cannot create new Seller.")
           setStep(4);
           setTimeout(() => {
             setError(false);
-            setStep(4); // Keep the user on the step to retry login
-          }, 2000);
-          
-        } else {
-          setError(true);
-          setErrorMessage("invalid password")
-          setTimeout(() => {
-            setError(false);
-            setStep(4); // Keep the user on the step to retry login
+            setStep(4); 
           }, 2000);
         }
       }
-    } catch (error) {
-      console.error('Error during login:', error);
-      setError(false); 
-      setErrorMessage("Error during Login")
-      setTimeout(() => {
-        setError(false); 
-        setStep(3); 
-      }, 2000);
-
-    }
+    })
   };
 
-  const SellerLoginHandler = ()=>{
-    setStep(4);
-
-  }
-
-  const signupHandler = ()=>{
-    setStep(3);
-  }
   const isPhoneNumberValid = phoneNumber.length === 10 && /^\d+$/.test(phoneNumber);
   
   const handleContinueClick = () => {
@@ -406,25 +265,17 @@ function HomeHeader({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDialog
     }
   };
 
-  const toggleCart = () => {
-    setIsCartOpen(!isCartOpen);
-  };
-
-
-  const toggleDialog = () => {
-    setIsAccountDialogOpen(!isAccountDialogOpen);
-  };
 
   const handleLogout = () => {
     localStorage.removeItem('jwtToken');
     localStorage.removeItem('phoneNumber');
     setIsAccountDialogOpen(false);
-    window.location.href = '/';  // Redirect to homepage
+    window.location.href = '/';  
   };
 
   const handleProfile = () => {
     setIsAccountDialogOpen(false);
-    window.location.href = '/profile';  // Redirect to Profile page
+    window.location.href = '/profile';  
   };
   return (
     <CustomHeader>
@@ -437,11 +288,11 @@ function HomeHeader({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDialog
 
       <div>
         <DeliveryTime>Delivery in 10 minutes</DeliveryTime>
-        <HeaderAddress onClick={toggleLocationDialog}>{currentAddress}</HeaderAddress>
+        <HeaderAddress onClick={() => setShowDialog(!showDialog)}>{currentAddress}</HeaderAddress>
       </div>
 
 
-      {showDialog && <BlurredBackground onClick={closeDialog} isVisible={showDialog} />}
+      {showDialog && <BlurredBackground onClick={() => setShowDialog(false)} isVisible={showDialog} />}
       
       <Dialog isVisible={showDialog}>
         <SavedAddress>Saved Address: </SavedAddress>
@@ -449,7 +300,7 @@ function HomeHeader({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDialog
               {addresses.map((address, index) => (
                 <SmallAddressDiv>
                 <LocationImg src={location} alt="Location" />
-                <AddressItem key={index} onClick={() => selectAddress(address)}>
+                <AddressItem key={index} onClick={() => (undefined)}>
                   {address}
                 </AddressItem></SmallAddressDiv>
                 
@@ -470,7 +321,7 @@ function HomeHeader({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDialog
           {isLoggedIn ? (
              <>
              {/* Account button */}
-             <AccountButton onClick={toggleDialog}>
+             <AccountButton onClick={() => setIsAccountDialogOpen(!isAccountDialogOpen)}>
                Account 
              </AccountButton>
        
@@ -478,7 +329,7 @@ function HomeHeader({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDialog
              {isAccountDialogOpen && (
                <>
                  {/* Blurred background */}
-                 <BlurBackground onClick={toggleDialog} />
+                 <BlurBackground onClick={() => setIsAccountDialogOpen(!isAccountDialogOpen)} />
        
                  {/* Dialog box */}
                  <DialogBox>
@@ -532,7 +383,7 @@ function HomeHeader({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDialog
              <FirstContainer>
                <BackButton onClick={() => setShowLoginDialog(false)}>←</BackButton>
                <LoginLogo src={BlinkItLogo} alt="Logo" />
-               <SellerInLogin onClick={SellerLoginHandler}>Seller</SellerInLogin>
+               <SellerInLogin onClick={() => setStep(4)}>Seller</SellerInLogin>
              </FirstContainer>
  
              <IndiaLastMinh2>India's last minute app</IndiaLastMinh2>
@@ -548,7 +399,7 @@ function HomeHeader({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDialog
                  placeholder="Enter your phone number"
                />
                </InputContainer>
-               <SignUp onClick={signupHandler} >Sign Up</SignUp>
+               <SignUp onClick={() => setStep(3)} >Sign Up</SignUp>
                </SignUpDiv>
                
              
@@ -573,7 +424,7 @@ function HomeHeader({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDialog
              <InputField
                type="password"
                value={password}
-               onChange={handlePasswordChange}
+               onChange={(e) => setPassword(e.target.value)}
                placeholder="Enter your password"
              />
              <ContinueButton onClick={handleLoginClick}>Log In</ContinueButton>
@@ -601,7 +452,7 @@ function HomeHeader({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDialog
              <InputField
                type="password"
                value={password}
-               onChange={handlePasswordChange}
+               onChange={(e) => setPassword(e.target.value)}
                placeholder="Enter your password"
              />
              <ContinueButton onClick={handleSignUp}>SignUp</ContinueButton>
@@ -612,7 +463,7 @@ function HomeHeader({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDialog
         {step === 4 && (
            <>
              <FirstContainer>
-               <BackButton onClick={() => setStep(1)}>←</BackButton> {/* Back to Step 1 */}
+               <BackButton onClick={() => setStep(1)}>←</BackButton> 
                <LoginLogo src={BlinkItLogo} alt="Logo" />
              </FirstContainer>
              
@@ -627,7 +478,7 @@ function HomeHeader({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDialog
              <InputField
                type="password"
                value={sellerPw}
-               onChange={handleSellerPw}
+               onChange={(e) => setSellerPw(e.target.value)}
                placeholder="Enter your password"
              />
              <ContinueButton onClick={handleSellerLogin}>LogIn</ContinueButton>
@@ -653,7 +504,7 @@ function HomeHeader({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDialog
              <InputField
                type="password"
                value={sellerPw}
-               onChange={handleSellerPw}
+               onChange={(e) => setSellerPw(e.target.value)}
                placeholder="Enter your password"
              />
              <ContinueButton onClick={handleSellerSignUp}>SignUp</ContinueButton>
@@ -667,7 +518,7 @@ function HomeHeader({isLoggedIn,setShowLoginDialog,setIsLoggedIn,showLoginDialog
 
       
 
-      <CartDiv onClick={toggleCart}>
+      <CartDiv onClick={() => setIsCartOpen(!isCartOpen)}>
         <CartImg src={CartImage} alt="CartImage" />
         <Cart>My Cart</Cart>
       </CartDiv>
