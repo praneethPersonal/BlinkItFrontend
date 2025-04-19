@@ -52,7 +52,7 @@ export function SellerPersona() {
   
   // Fetch categories
   const fetchData1 = async () => {
-    const response = await fetch("http://localhost:5017/api/blinkit/Category/category");
+    const response = await fetch("http://localhost:5017/api/blinkit/GetProduct/category");
     const data = await response.json();
     return data;
   };
@@ -134,7 +134,6 @@ const { isLoading: LoadingForSellerProducts, data: fetchedProductsBySeller } = u
   queryFn: fetchProductsBySeller,
 });
   
-console.log(fetchedProductsBySeller)
  
   const [productStocks, setProductStocks] = useState({});
   const [newStock, setNewStock] = useState({}); // State to hold new stock input
@@ -185,7 +184,6 @@ console.log(fetchedProductsBySeller)
         newStock: newStock,
       }),
     });
-  console.log(response)
     if (!response.ok) {
       const errorDetails = await response.text();
       throw new Error(`Failed to update stock: ${errorDetails}`);
@@ -238,7 +236,6 @@ console.log(fetchedProductsBySeller)
       }
     });
   });
-  console.log(result,22)
 
   
   const [selectedFile, setSelectedFile] = useState(null);
@@ -264,7 +261,6 @@ console.log(fetchedProductsBySeller)
   
     setNewProduct({...newProduct,photo_url:formData})
   };
-  console.log(newProduct)
 
 
   if (loadingForCat ) {

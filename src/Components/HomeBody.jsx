@@ -54,7 +54,7 @@ function HomeDiv() {
   const queryClient = useQueryClient();
 
   const fetchData1 = async () => {
-    const response = await fetch("http://localhost:5017/api/BlinkIt/Category/category");
+    const response = await fetch("http://localhost:5017/api/BlinkIt/GetProduct/category");
     const data = await response.json();
     return data;
   };

@@ -8,7 +8,7 @@ export function Footer(){
 
     
     const fetchData1 = async () => {
-        const response = await fetch("http://localhost:5017/api/blinkit/Category/category");
+        const response = await fetch("http://localhost:5017/api/blinkit/GetProduct/category");
         const data = await response.json();  
         return data;
     };
